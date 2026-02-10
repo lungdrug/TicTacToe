@@ -522,10 +522,22 @@ async function loadAdminUsers() {
         users.forEach(user => {
             const userCard = document.createElement('div');
             userCard.className = 'user-card';
+            const isCurrentUser = user.username === currentUser.username;
+            
+            let actionButtons = `
+                <div class="user-card-actions">
+                    <button class="btn btn-sm btn-warning" onclick="showResetPasswordModal('${user.username}')" ${isCurrentUser ? 'disabled' : ''}>Reset Password</button>
+                    <button class="btn btn-sm btn-info" onclick="showChangeUsernameModal('${user.username}')" ${isCurrentUser ? 'disabled' : ''}>Change Username</button>
+                    ${!user.isAdmin ? `<button class="btn btn-sm btn-success" onclick="adminMakeAdmin('${user.username}')" ${isCurrentUser ? 'disabled' : ''}>Make Admin</button>` : ''}
+                    <button class="btn btn-sm btn-danger" onclick="adminDeleteUser('${user.username}')" ${isCurrentUser ? 'disabled' : ''}>Delete User</button>
+                </div>
+            `;
+            
             userCard.innerHTML = `
                 <div class="user-card-header">
                     <span class="user-card-name">${user.username}</span>
                     ${user.isAdmin ? '<span class="user-card-badge">ADMIN</span>' : ''}
+                    ${isCurrentUser ? '<span class="user-card-badge">YOU</span>' : ''}
                 </div>
                 <div class="user-card-stats">
                     <div>Wins: <strong>${user.wins}</strong></div>
@@ -533,6 +545,7 @@ async function loadAdminUsers() {
                     <div>Draws: <strong>${user.draws}</strong></div>
                     <div>Created: <strong>${new Date(user.createdAt).toLocaleDateString()}</strong></div>
                 </div>
+                ${actionButtons}
             `;
             container.appendChild(userCard);
         });
@@ -588,6 +601,234 @@ async function handleCreateAdmin(event) {
         messageEl.textContent = 'An error occurred. Please try again.';
         messageEl.className = 'message error';
         console.error('Error creating admin:', error);
+    }
+}
+
+// User Account Management Functions
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    const messageEl = document.getElementById('change-password-message');
+
+    if (newPassword !== confirmPassword) {
+        messageEl.textContent = 'New passwords do not match';
+        messageEl.className = 'message error';
+        return;
+    }
+
+    if (newPassword.length < 4) {
+        messageEl.textContent = 'Password must be at least 4 characters';
+        messageEl.className = 'message error';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/user/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: currentUser.username,
+                currentPassword,
+                newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            messageEl.textContent = data.error || 'Failed to change password';
+            messageEl.className = 'message error';
+            return;
+        }
+
+        messageEl.textContent = 'Password changed successfully!';
+        messageEl.className = 'message success';
+
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+    } catch (error) {
+        messageEl.textContent = 'An error occurred. Please try again.';
+        messageEl.className = 'message error';
+        console.error('Error changing password:', error);
+    }
+}
+
+async function handleChangeUsername(event) {
+    event.preventDefault();
+
+    const newUsername = document.getElementById('new-username').value;
+    const password = document.getElementById('confirm-password-username').value;
+    const messageEl = document.getElementById('change-username-message');
+
+    try {
+        const response = await fetch('/api/user/change-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentUsername: currentUser.username,
+                newUsername,
+                password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            messageEl.textContent = data.error || 'Failed to change username';
+            messageEl.className = 'message error';
+            return;
+        }
+
+        messageEl.textContent = 'Username changed successfully! Please log in again.';
+        messageEl.className = 'message success';
+
+        // Update localStorage with new user data
+        localStorage.setItem('user', JSON.stringify(data.user));
+        currentUser = data.user;
+        document.getElementById('username-display').textContent = data.user.username;
+
+        document.getElementById('new-username').value = '';
+        document.getElementById('confirm-password-username').value = '';
+    } catch (error) {
+        messageEl.textContent = 'An error occurred. Please try again.';
+        messageEl.className = 'message error';
+        console.error('Error changing username:', error);
+    }
+}
+
+// Admin User Management Functions
+
+function showResetPasswordModal(username) {
+    const newPassword = prompt(`Enter new password for ${username}:`);
+    if (newPassword !== null) {
+        adminResetPassword(username, newPassword);
+    }
+}
+
+function showChangeUsernameModal(username) {
+    const newUsername = prompt(`Enter new username for ${username}:`);
+    if (newUsername !== null) {
+        adminChangeUsername(username, newUsername);
+    }
+}
+
+async function adminResetPassword(targetUsername, newPassword) {
+    try {
+        const response = await fetch('/api/admin/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUsername: currentUser.username,
+                targetUsername,
+                newPassword
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Failed to reset password');
+            return;
+        }
+
+        alert(`Password reset for ${targetUsername}!`);
+        loadAdminUsers();
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+        console.error('Error resetting password:', error);
+    }
+}
+
+async function adminChangeUsername(targetUsername, newUsername) {
+    try {
+        const response = await fetch('/api/admin/change-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUsername: currentUser.username,
+                targetUsername,
+                newUsername
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Failed to change username');
+            return;
+        }
+
+        alert(`Username changed to ${newUsername}!`);
+        loadAdminUsers();
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+        console.error('Error changing username:', error);
+    }
+}
+
+async function adminMakeAdmin(targetUsername) {
+    if (!confirm(`Make ${targetUsername} an administrator?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/make-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUsername: currentUser.username,
+                targetUsername
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Failed to make admin');
+            return;
+        }
+
+        alert(`${targetUsername} is now an administrator!`);
+        loadAdminUsers();
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+        console.error('Error making admin:', error);
+    }
+}
+
+async function adminDeleteUser(targetUsername) {
+    if (!confirm(`Are you sure you want to delete user ${targetUsername}? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminUsername: currentUser.username,
+                targetUsername
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || 'Failed to delete user');
+            return;
+        }
+
+        alert(`User ${targetUsername} has been deleted!`);
+        loadAdminUsers();
+        loadAdminStats();
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+        console.error('Error deleting user:', error);
     }
 }
 

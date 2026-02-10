@@ -229,6 +229,191 @@ app.post('/api/admin/create-admin', (req, res) => {
   });
 });
 
+// User Account Management Routes
+
+// Change user password
+app.post('/api/user/change-password', (req, res) => {
+  const { username, currentPassword, newPassword } = req.body;
+
+  if (!username || !currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const user = users.find(u => u.username === username);
+
+  if (!user || !bcrypt.compareSync(currentPassword, user.password)) {
+    return res.status(401).json({ error: 'Current password is incorrect' });
+  }
+
+  if (newPassword.length < 4) {
+    return res.status(400).json({ error: 'New password must be at least 4 characters' });
+  }
+
+  user.password = bcrypt.hashSync(newPassword, 10);
+  saveUsers(users);
+
+  res.json({ success: true, message: 'Password changed successfully' });
+});
+
+// Change user username
+app.post('/api/user/change-username', (req, res) => {
+  const { currentUsername, newUsername, password } = req.body;
+
+  if (!currentUsername || !newUsername || !password) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const user = users.find(u => u.username === currentUsername);
+
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    return res.status(401).json({ error: 'Password is incorrect' });
+  }
+
+  if (users.find(u => u.username === newUsername)) {
+    return res.status(400).json({ error: 'Username already exists' });
+  }
+
+  user.username = newUsername;
+  saveUsers(users);
+
+  res.json({ 
+    success: true, 
+    message: 'Username changed successfully',
+    user: {
+      id: user.id,
+      username: user.username,
+      isAdmin: user.isAdmin,
+      wins: user.wins,
+      losses: user.losses,
+      draws: user.draws
+    }
+  });
+});
+
+// Admin Routes for User Management
+
+// Reset user password (admin only)
+app.post('/api/admin/reset-password', (req, res) => {
+  const { adminUsername, targetUsername, newPassword } = req.body;
+
+  if (!adminUsername || !targetUsername || !newPassword) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const adminUser = users.find(u => u.username === adminUsername);
+
+  if (!adminUser || !adminUser.isAdmin) {
+    return res.status(403).json({ error: 'Only admins can reset passwords' });
+  }
+
+  const targetUser = users.find(u => u.username === targetUsername);
+  if (!targetUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (newPassword.length < 4) {
+    return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  }
+
+  targetUser.password = bcrypt.hashSync(newPassword, 10);
+  saveUsers(users);
+
+  res.json({ success: true, message: `Password reset for ${targetUsername}` });
+});
+
+// Change user username (admin only)
+app.post('/api/admin/change-username', (req, res) => {
+  const { adminUsername, targetUsername, newUsername } = req.body;
+
+  if (!adminUsername || !targetUsername || !newUsername) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const adminUser = users.find(u => u.username === adminUsername);
+
+  if (!adminUser || !adminUser.isAdmin) {
+    return res.status(403).json({ error: 'Only admins can change usernames' });
+  }
+
+  const targetUser = users.find(u => u.username === targetUsername);
+  if (!targetUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (users.find(u => u.username === newUsername)) {
+    return res.status(400).json({ error: 'Username already exists' });
+  }
+
+  targetUser.username = newUsername;
+  saveUsers(users);
+
+  res.json({ success: true, message: `Username changed to ${newUsername}` });
+});
+
+// Delete user account (admin only)
+app.post('/api/admin/delete-user', (req, res) => {
+  const { adminUsername, targetUsername } = req.body;
+
+  if (!adminUsername || !targetUsername) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const adminUser = users.find(u => u.username === adminUsername);
+
+  if (!adminUser || !adminUser.isAdmin) {
+    return res.status(403).json({ error: 'Only admins can delete users' });
+  }
+
+  if (adminUsername === targetUsername) {
+    return res.status(400).json({ error: 'Cannot delete your own account' });
+  }
+
+  const targetIndex = users.findIndex(u => u.username === targetUsername);
+  if (targetIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  users.splice(targetIndex, 1);
+  saveUsers(users);
+
+  res.json({ success: true, message: `User ${targetUsername} deleted` });
+});
+
+// Make user administrator (admin only)
+app.post('/api/admin/make-admin', (req, res) => {
+  const { adminUsername, targetUsername } = req.body;
+
+  if (!adminUsername || !targetUsername) {
+    return res.status(400).json({ error: 'All fields required' });
+  }
+
+  const users = getUsers();
+  const adminUser = users.find(u => u.username === adminUsername);
+
+  if (!adminUser || !adminUser.isAdmin) {
+    return res.status(403).json({ error: 'Only admins can create new admins' });
+  }
+
+  const targetUser = users.find(u => u.username === targetUsername);
+  if (!targetUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (targetUser.isAdmin) {
+    return res.status(400).json({ error: 'User is already an admin' });
+  }
+
+  targetUser.isAdmin = true;
+  saveUsers(users);
+
+  res.json({ success: true, message: `${targetUsername} is now an administrator` });
+});
+
 // Socket.io events
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);

@@ -15,6 +15,7 @@
                 <div class="nav-center">
                     <button class="nav-btn active" onclick="switchTab('game')">Play</button>
                     <button class="nav-btn" onclick="switchTab('leaderboard')">Leaderboard</button>
+                    <button class="nav-btn" onclick="switchTab('settings')">Settings</button>
                     <div id="admin-nav" style="display: none;">
                         <button class="nav-btn" onclick="switchTab('admin')">Admin Panel</button>
                     </div>
@@ -155,6 +156,49 @@
                 </div>
                 <div id="admin-denied" class="unauthorized" style="display: none;">
                     <p>You don't have permission to access this panel.</p>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab">
+                <div class="settings-container">
+                    <h2>Account Settings</h2>
+                    
+                    <div class="settings-section">
+                        <h3>Change Password</h3>
+                        <form onsubmit="handleChangePassword(event)" class="settings-form">
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" id="new-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <input type="password" id="confirm-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </form>
+                        <p id="change-password-message" class="message"></p>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Change Username</h3>
+                        <form onsubmit="handleChangeUsername(event)" class="settings-form">
+                            <div class="form-group">
+                                <label>New Username</label>
+                                <input type="text" id="new-username" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password (to confirm)</label>
+                                <input type="password" id="confirm-password-username" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Change Username</button>
+                        </form>
+                        <p id="change-username-message" class="message"></p>
+                    </div>
                 </div>
             </div>
         </div>
