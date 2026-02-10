@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <h1 class="logo">Tic Tac Toe</h1>
+                <div class="nav-center">
+                    <button class="nav-btn active" onclick="switchTab('game')">Play</button>
+                    <button class="nav-btn" onclick="switchTab('leaderboard')">Leaderboard</button>
+                    <div id="admin-nav" style="display: none;">
+                        <button class="nav-btn" onclick="switchTab('admin')">Admin Panel</button>
+                    </div>
+                </div>
+                <div class="nav-right">
+                    <span id="username-display" class="username"></span>
+                    <button class="btn btn-danger" onclick="handleLogout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="dashboard-content">
+            <!-- Game Tab -->
+            <div id="game-tab" class="tab active">
+                <!-- Game Mode Selection -->
+                <div id="game-mode-selection" class="game-mode-selection">
+                    <h2>Select Game Mode</h2>
+                    <div class="mode-cards">
+                        <div class="mode-card" onclick="selectGameMode('multiplayer')">
+                            <h3>🌐 Multiplayer</h3>
+                            <p>Play with another player online</p>
+                        </div>
+                        <div class="mode-card" onclick="selectGameMode('local')">
+                            <h3>👥 Local 2-Player</h3>
+                            <p>Play on the same device</p>
+                        </div>
+                        <div class="mode-card" onclick="selectGameMode('cpu')">
+                            <h3>🤖 Play vs CPU</h3>
+                            <p>Challenge the computer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Section -->
+                <div id="game-section" class="game-section" style="display: none;">
+                    <div class="game-wrapper">
+                        <div class="game-info">
+                            <h2 id="game-title">Play Game</h2>
+                            <div id="game-status" class="game-status">Loading...</div>
+                        </div>
+
+                        <div id="game-board" class="game-board" style="display: none;">
+                            <div class="cell" onclick="makeMove(0)"></div>
+                            <div class="cell" onclick="makeMove(1)"></div>
+                            <div class="cell" onclick="makeMove(2)"></div>
+                            <div class="cell" onclick="makeMove(3)"></div>
+                            <div class="cell" onclick="makeMove(4)"></div>
+                            <div class="cell" onclick="makeMove(5)"></div>
+                            <div class="cell" onclick="makeMove(6)"></div>
+                            <div class="cell" onclick="makeMove(7)"></div>
+                            <div class="cell" onclick="makeMove(8)"></div>
+                        </div>
+
+                        <div id="game-controls">
+                            <button id="find-opponent-btn" class="btn btn-primary" onclick="findOpponent()" style="display: none;">Find Opponent</button>
+                            <button id="start-local-btn" class="btn btn-primary" onclick="startLocalGame()" style="display: none;">Start Game</button>
+                            <button id="start-cpu-btn" class="btn btn-primary" onclick="startCPUGame()" style="display: none;">Start vs CPU</button>
+                            <button id="new-game-btn" class="btn btn-secondary" onclick="newGame()" style="display: none;">New Game</button>
+                            <button id="back-btn" class="btn btn-secondary" onclick="backToModeSelection()">Back to Mode Selection</button>
+                        </div>
+                    </div>
+
+                    <!-- Online Users Sidebar -->
+                    <div id="online-sidebar" class="sidebar" style="display: none;">
+                        <h3>Online Users</h3>
+                        <div id="online-users-list" class="users-list">
+                            <p class="loading">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div id="leaderboard-tab" class="tab">
+                <div class="leaderboard-container">
+                    <h2>Leaderboard</h2>
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Username</th>
+                                <th>Wins</th>
+                                <th>Losses</th>
+                                <th>Draws</th>
+                                <th>Total Games</th>
+                                <th>Win Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <tr><td colspan="7" class="loading">Loading leaderboard...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Admin Panel Tab -->
+            <div id="admin-tab" class="tab">
+                <div class="admin-container" style="display: none;" id="admin-content">
+                    <h2>Admin Panel</h2>
+                    
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <h3>Total Users</h3>
+                            <p id="stat-users" class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Games</h3>
+                            <p id="stat-games" class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Online Users</h3>
+                            <p id="stat-online" class="stat-number">0</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3>Create New Admin</h3>
+                        <form onsubmit="handleCreateAdmin(event)" class="admin-form">
+                            <input type="text" id="new-admin-username" placeholder="New Admin Username" required>
+                            <input type="password" id="new-admin-password" placeholder="New Admin Password" required>
+                            <button type="submit" class="btn btn-primary">Create Admin</button>
+                        </form>
+                        <p id="admin-create-message" class="message"></p>
+                    </div>
+
+                    <div class="admin-section">
+                        <h3>Manage Users</h3>
+                        <div id="users-management" class="users-management">
+                            <p class="loading">Loading users...</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-actions">
+                        <h3>Actions</h3>
+                        <button class="btn btn-primary" onclick="loadAdminStats()">Refresh Stats</button>
+                    </div>
+                </div>
+                <div id="admin-denied" class="unauthorized" style="display: none;">
+                    <p>You don't have permission to access this panel.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "bb1320c6-45ad-49ca-a678-aaedc1d74683",
+    "username": "admin",
+    "password": "$2a$10$x2zMeIgyQpn7xaHCFejsDubqsQjCPQBiM6Lriq3THwQdWJwLw1DoW",
+    "isAdmin": true,
+    "wins": 0,
+    "losses": 0,
+    "draws": 0,
+    "createdAt": "2026-02-10T09:30:44.849Z"
+  }
+]
